@@ -2,18 +2,20 @@
 
 module Calc
   module Tokens
-    OPERATOR   = 0
-    NUMBER     = 1
-    ID         = 2
-    UNEXPECTED = 3
-    EOI        = 4
+    COMOP      = 0
+    OPERATOR   = 1
+    NUMBER     = 2
+    ID         = 3
+    UNEXPECTED = 4
+    EOI        = 5
 
     NAME = {
-      0 => :OPERATOR,   
-      1 => :NUMBER,    
-      2 => :ID,        
-      3 => :UNEXPECTED,
-      4 => :EOI,
+      0 => :COMOP,
+      1 => :OPERATOR,   
+      2 => :NUMBER,    
+      3 => :ID,        
+      4 => :UNEXPECTED,
+      5 => :EOI,
     }
   end
 
@@ -38,10 +40,11 @@ module Calc
       @input = input                 
 
       @regexp = %r{
-           ([-+*/()=;])              # OPERATOR 
+	   (<=|>=|==|!=|[<>])        # COMOP
+         | ([-+*/()=;])              # OPERATOR 
          | (\d+)                     # NUMBER
          | ([a-zA-Z_]\w*)            # ID 
-         |(\S)                       # UNEXPECTED
+         | (\S)                      # UNEXPECTED
       }x
 
       @lexer = Fiber.new do
@@ -69,7 +72,7 @@ module Calc
 
     def match_val(v)
       if (v == current_token.value)
-        next_token
+        expressionnext_token
       else
         raise SyntaxError, "Syntax error. Expected '#{v}', found '#{current_token}'"
       end
@@ -80,8 +83,8 @@ module Calc
     end
 
     # Operator '=' is right associative
-    def assignment     # assignment --> expression '=' assignment | expression
-      val = expression
+    def assignment     # assignment --> comparison '=' assignment | comparison
+      val = comparison
       if (current_token.value == '=') 
         raise SyntaxError, "Error. Expected left-value, found #{val}" unless  val =~ /^[a-z_A-Z]\w*$/
         next_token
@@ -92,13 +95,14 @@ module Calc
     end
     
     def comparison
-      exp = expresion
+      exp = expression
       lookahead, sem = current_token.token, current_token.value
       if lookahead == COMOP then
 	next_token
-	exp2 = expresion
-	"#{exp}#{exp2}#{sem}"
+	exp2 = expression
+	exp = "#{exp} #{exp2} #{sem}"
       end
+      exp
     end
 
     def expression   # expression --> expresion /^[+-]$/ term | term
@@ -157,6 +161,12 @@ module Calc
     puts "The translation of '#{input}' to postfix is: #{postfix}"
 
     input = '3 * 5'
+    calc = Parser.new( input )
+    postfix =  calc.assignment()
+    raise SyntaxError, "Unexpected #{calc.current_token}\n" unless calc.current_token.token == EOI
+    puts "The translation of '#{input}' to postfix is: #{postfix}"
+    
+    input = '2 <= 5'
     calc = Parser.new( input )
     postfix =  calc.assignment()
     raise SyntaxError, "Unexpected #{calc.current_token}\n" unless calc.current_token.token == EOI
