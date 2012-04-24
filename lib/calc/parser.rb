@@ -90,6 +90,16 @@ module Calc
         val
       end
     end
+    
+    def comparison
+      exp = expresion
+      lookahead, sem = current_token.token, current_token.value
+      if lookahead == COMOP then
+	next_token
+	exp2 = expresion
+	"#{exp}#{exp2}#{sem}"
+      end
+    end
 
     def expression   # expression --> expresion /^[+-]$/ term | term
       t1 = term
