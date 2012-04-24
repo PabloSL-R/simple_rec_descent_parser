@@ -14,7 +14,7 @@ assignment   : comparison '=' assignment
              | comparison
 ;
 
-comparison   : comparison COMOP expression
+comparison   : expression COMOP expression
              | expresion
 
 expression   : expression ADDOP term
