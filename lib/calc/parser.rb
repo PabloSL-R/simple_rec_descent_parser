@@ -72,7 +72,7 @@ module Calc
 
     def match_val(v)
       if (v == current_token.value)
-        expressionnext_token
+        next_token
       else
         raise SyntaxError, "Syntax error. Expected '#{v}', found '#{current_token}'"
       end
